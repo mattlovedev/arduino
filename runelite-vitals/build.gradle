@@ -1,0 +1,89 @@
+plugins {
+	id 'java'
+}
+
+repositories {
+	mavenLocal()
+	maven {
+		url = 'https://repo.runelite.net'
+		content {
+			includeGroupByRegex("net\\.runelite.*")
+		}
+	}
+	mavenCentral()
+}
+
+def runeLiteVersion = '1.12.38'
+def pluginMainClass = 'dev.mattlove.vitals.VitalsPluginTest'
+
+dependencies {
+	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
+
+	compileOnly 'org.projectlombok:lombok:1.18.30'
+	annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+	testImplementation 'junit:junit:4.12'
+	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
+	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
+}
+
+group = 'dev.mattlove.vitals'
+version = '1.0'
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release.set(11)
+}
+
+// Thin jar for sideloading into ~/.runelite/sideloaded-plugins/.
+// RuneLite provides its own client/api and Guice at runtime, so the jar only
+// needs our classes plus runelite-plugin.properties (which names the plugin class).
+jar {
+	from('.') {
+		include 'runelite-plugin.properties'
+	}
+}
+
+tasks.register('run', JavaExec) {
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = pluginMainClass
+
+	// RuneLite's packaged launcher passes these; needed on macOS / JDK 17 so the
+	// client's com.apple.eawt / sun.awt usage isn't blocked by module encapsulation.
+	jvmArgs = [
+		"-ea",
+		"--add-exports=java.desktop/com.apple.eawt=ALL-UNNAMED",
+		"--add-exports=java.desktop/sun.awt=ALL-UNNAMED",
+		"--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+		"--add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED",
+		"--add-opens=java.desktop/sun.lwawt=ALL-UNNAMED",
+		"--add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED",
+	]
+	args "--developer-mode", "--debug"
+}
+
+tasks.register('shadowJar', Jar) {
+	dependsOn configurations.testRuntimeClasspath
+	manifest {
+		attributes('Main-Class': pluginMainClass, 'Multi-Release': true)
+	}
+
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from sourceSets.main.output
+	from sourceSets.test.output
+	from {
+		configurations.testRuntimeClasspath.collect { file ->
+			file.isDirectory() ? file : zipTree(file)
+		}
+	}
+
+	exclude 'META-INF/INDEX.LIST'
+	exclude 'META-INF/*.SF'
+	exclude 'META-INF/*.DSA'
+	exclude 'META-INF/*.RSA'
+	exclude '**/module-info.class'
+
+	group = BasePlugin.BUILD_GROUP
+	archiveClassifier.set('shadow')
+	archiveFileName.set("${rootProject.name}-${project.version}-all.jar")
+}

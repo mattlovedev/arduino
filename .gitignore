@@ -14,3 +14,7 @@ build/
 *.hex
 *.elf
 *.bin
+
+# Gradle (runelite-vitals plugin)
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
