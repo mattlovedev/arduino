@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
+
+# Arduino build output
+build/
+*.hex
+*.elf
+*.bin
