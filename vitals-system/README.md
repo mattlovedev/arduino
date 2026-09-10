@@ -35,6 +35,9 @@ horizontal fill bar with a soft edge pixel and white overflow when boosted above
   upstream, so the board only ever sees a percent.
 - **`MODE_TEST`** build sweeps a single pixel to verify the three panel-wiring
   flags before first run.
+- **Colour & brightness** — HP red, Prayer teal, run through a `GAMMA` lookup
+  table at a low `BRIGHTNESS` so it stays dim and clean in a dark room
+  (`GAMMA 1.0f` disables the curve).
 - Built and flashed with `arduino-cli` (FQBN `arduino:avr:mega:cpu=atmega2560`),
   needs the FastLED library. See `scripts/sketch.sh`.
 
@@ -76,8 +79,8 @@ See `scripts/plugin.sh` for the launch and auth helpers.
 ## Hardware
 
 Arduino Mega 2560, two 32×8 WS2812B panels (512 LEDs) on data pin 2, `GRB`,
-brightness 24. Full pin/button/power notes live with the other sketches in the
-repo root.
+`BRIGHTNESS 12` through a gamma curve (tuned for a dark room). Full
+pin/button/power notes live with the other sketches in the repo root.
 
 ## scripts/
 

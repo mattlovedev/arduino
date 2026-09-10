@@ -8,7 +8,8 @@
 //   1. build with MODE = MODE_TEST, open Serial Monitor @ 115200, watch the
 //      single green pixel sweep. It should travel left->right along the top
 //      row first, then step down. Fix the three wiring flags below until it does.
-//   2. switch to MODE = MODE_RUN with DATA_SOURCE = SRC_STATIC and tune colors.
+//   2. switch to MODE = MODE_RUN with DATA_SOURCE = SRC_STATIC and tune colors,
+//      BRIGHTNESS and GAMMA.
 //   3. switch DATA_SOURCE = SRC_SERIAL and have the bridge send fill percents:
 //        HP <pct>\n      (0..100, may exceed 100 when boosted)
 //        PR <pct>\n
@@ -30,7 +31,7 @@
 #define LED_PIN       2
 #define CHIPSET       WS2812B
 #define COLOR_ORDER   GRB
-#define BRIGHTNESS    24
+#define BRIGHTNESS    12
 #define MAX_MILLIAMPS 2000
 
 // ===================== panel layout =====================
@@ -59,9 +60,33 @@ struct Stat {
 };
 
 Stat hp   = { 55, 55.0f, CRGB(255,   8,   0) };  // hitpoints red
-Stat pray = { 75, 75.0f, CRGB(  0,   0, 255) };  // prayer blue
+Stat pray = { 75, 75.0f, CRGB(  0, 200, 180) };  // prayer teal (OSRS-ish)
 
 #define EASE 0.18f
+
+// ===================== gamma =====================
+// Perceptual dimming: at low brightness a linear channel value of a few /255
+// reads far brighter than its number and washes colours out (dim red -> pink).
+// A gamma curve pushes those low values back down so hue holds up when dim.
+// Set GAMMA to 1.0f to disable. Built once into a LUT so render() stays cheap.
+#define GAMMA 2.8f
+uint8_t gammaLUT[256];
+
+static void buildGammaLUT() {
+  for (int i = 0; i < 256; i++) {
+    uint8_t g = (uint8_t)(powf(i / 255.0f, GAMMA) * 255.0f + 0.5f);
+    if (g == 0 && i > 0) g = 1;   // never let a lit channel drop fully to black
+    gammaLUT[i] = g;
+  }
+}
+
+static void applyGamma() {
+  for (int i = 0; i < NUM_LEDS; i++) {
+    leds[i].r = gammaLUT[leds[i].r];
+    leds[i].g = gammaLUT[leds[i].g];
+    leds[i].b = gammaLUT[leds[i].b];
+  }
+}
 
 // index within one panel, local coords px:0..31 py:0..7
 static uint16_t panelLocal(uint8_t px, uint8_t py) {
@@ -108,6 +133,7 @@ void drawBar(uint8_t rowTop, const Stat &s) {
 void render() {
   drawBar(0,       hp);
   drawBar(PANEL_H, pray);
+  applyGamma();
   FastLED.show();
 }
 
@@ -156,6 +182,7 @@ void setup() {
          .setCorrection(UncorrectedColor);
   FastLED.setBrightness(BRIGHTNESS);
   FastLED.setMaxPowerInVoltsAndMilliamps(5, MAX_MILLIAMPS);
+  buildGammaLUT();
   FastLED.clear(true);
 }
 
