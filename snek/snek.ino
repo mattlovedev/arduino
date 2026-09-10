@@ -57,13 +57,13 @@ struct snek {
   int dir;
 };
 
-snek snek = { 0 };
+snek snek = {};
 
 void newSnek() {
   if (snek.body != NULL) {
     free(snek.body); // TODO prob could realloc instead of free/calloc
   }
-  snek.body = calloc(10, sizeof(*snek.body));
+  snek.body = (point *) calloc(10, sizeof(*snek.body));
   snek.len = 1;
   snek.cap = 10;
   snek.dir = NONE;
@@ -96,14 +96,14 @@ bool nSnekContains(point p, int n) {
 }
 
 void snekMove(point head) {
-  memmove(&snek.body[1], &snek.body[0], sizeof(*snek.body) * snek.len - 1);
+  memmove(&snek.body[1], &snek.body[0], sizeof(*snek.body) * (snek.len - 1));
   snek.body[0] = head;
 }
 
 void snekFeed(point head) {
   if (snek.len == snek.cap) {
     snek.cap *= 2;
-    snek.body = realloc(snek.body, snek.cap);
+    snek.body = (point *) realloc(snek.body, snek.cap * sizeof(*snek.body));
   }
   memmove(&snek.body[1], &snek.body[0], sizeof(*snek.body) * snek.len);
   snek.body[0] = head;  
@@ -120,7 +120,7 @@ point newFood() {
   return point{x, y};
 }
 
-point food = newFood();
+point food;
 
 void foodDraw() {
   drawPoint(food, CRGB::Red);
@@ -278,10 +278,10 @@ int* snekChoices() {
     int nUp = (food.y - snek.body[0].y + HEIGHT) % HEIGHT;
     int nDown = (snek.body[0].y - food.y + HEIGHT) % HEIGHT;
     choice dirs[4] = {
-      { dir: LEFT, n: nLeft },
-      { dir: RIGHT, n: nRight },
-      { dir: UP, n: nUp },
-      { dir: DOWN, n: nDown }
+      { .dir = LEFT, .n = nLeft },
+      { .dir = RIGHT, .n = nRight },
+      { .dir = UP, .n = nUp },
+      { .dir = DOWN, .n = nDown }
     };
     static int choices[4];
     qsort(&dirs, 4, sizeof(choice), cmpfunc);
@@ -343,7 +343,7 @@ void loop() {
 void setupRandom() {
   unsigned long seed = 0;
   for (int i=0; i<32; i++) {
-    seed = seed | ((analogRead(A0) & 0x01) << i);
+    seed |= (unsigned long)(analogRead(A0) & 0x01) << i;
   }
   randomSeed(seed);
 }
@@ -364,6 +364,7 @@ void setup() {
   FastLED.setBrightness( BRIGHTNESS );
   FastLED.clearData();
   newSnek();
+  food = newFood();
   snekDraw();
   foodDraw();
   //testRandom();
