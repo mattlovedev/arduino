@@ -2,7 +2,7 @@
 """Print UDP packets arriving on a port. Used to watch the RuneLite plugin's
 HP/PR stream before the real serial bridge exists.
 
-Usage:  python3 bridge/udpdump.py [port]   (default 9999)
+Usage:  python3 vitals-system/bridge/udpdump.py [port]   (default 9999)
 """
 import socket
 import sys

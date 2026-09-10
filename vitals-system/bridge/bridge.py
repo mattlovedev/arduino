@@ -9,7 +9,7 @@ the board. Reconnects if the serial port drops or its name changes, re-sends the
 last values after each (re)connect, and blanks the board (HP 0 / PR 0) when the
 plugin goes quiet (i.e. you logged out) so the lights don't stay on.
 
-Usage:  python3 bridge/bridge.py [--port /dev/cu.usbmodemXXXX] [--udp 9999] [-v]
+Usage:  python3 vitals-system/bridge/bridge.py [--port /dev/cu.usbmodemXXXX] [--udp 9999] [-v]
 Needs:  pip3 install pyserial
 """
 import argparse
